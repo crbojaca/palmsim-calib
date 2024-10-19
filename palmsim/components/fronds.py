@@ -93,8 +93,8 @@ class Fronds(object):
                 and sink-source relations in Oil Palm'
 
     initiation_rate_a:
-        value: 22.1091
-        unit: '1/palm/year - valor original: 21.28'
+        value: 21.28
+        unit: '1/palm/year'
         info: 'Parametrizes the frond initiation rate (exponential decay with 
                 age: a*(1+b*exp(-c*(t)) )as a function of years after planting.'
         source: 'Gerritsma, W. and Soebagyo, F.X., 1998.
@@ -103,8 +103,8 @@ class Fronds(object):
         uncertainty: 5%
 
     initiation_rate_b:
-        value: 3.8054
-        unit: '1 - valor original: 1.56'
+        value: 1.56
+        unit: '1'
         info: 'Parametrizes the frond initiation rate (exponential decay with 
                 age: a*(1+b*exp(-c*(t))) as a function of years after planting.'
         source: 'Gerritsma, W. and Soebagyo, F.X., 1998. An analysis of the growth 
@@ -112,8 +112,8 @@ class Fronds(object):
                     143 palms/ha density.'
 
     initiation_rate_c:
-        value: 0.3737
-        unit: '1/year - valor original: 0.24'
+        value: 0.24
+        unit: '1/year'
         info: 'Parametrizes the frond initiation rate (exponential decay with age: 
                 a*(1+b*exp(-c*(t)) )as a function of years after planting.'
         source: 'Gerritsma, W. and Soebagyo, F.X., 1998. An analysis of the growth
