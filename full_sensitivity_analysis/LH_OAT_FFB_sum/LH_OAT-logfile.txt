@@ -1,0 +1,27 @@
+================================================================================
+hydroPSO version     :  0.5-15  
+hydroPSO Built       :  R 4.4.1; ; 2024-09-18 15:03:06 UTC; windows  
+R version            :  R version 4.4.1 (2024-06-14 ucrt)  
+Platform             :  x86_64-w64-mingw32  
+================================================================================
+Starting Time        :  Fri Sep 20 11:51:02 2024  
+================================================================================
+N (number of strata) : 100 
+f (changing factor)  : 0.005 
+drty.in              : PSO.in 
+drty.out             : C:/Users/cbojaca/OneDrive - FEDEPALMA/palmsim-master/full_sensitivity_analysis/LH_OAT_FFB_sum 
+param.ranges         : ParamRanges.txt 
+digits               : 3 
+gof.name             : GoF 
+do.plots             : TRUE 
+write2disk           : TRUE 
+verbose              : TRUE 
+normalise            : FALSE 
+parallel             : parallelWin 
+par.nnodes           : 32 
+par.pkgs             : 
+================================================================================
+Ending Time          : Fri Sep 20 16:44:52 2024 
+================================================================================
+Elapsed Time         : 4.9 hours 
+================================================================================

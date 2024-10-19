@@ -1,0 +1,361 @@
+---
+title: \LARGE Análisis de Sensibilidad Global Modelo PALMSIM
+author: \normalsize Carlos Ricardo Bojacá
+format: 
+  pdf:
+    fig-pos: 'H'
+number-sections: true
+crossref:
+  fig-title: 'Figura'
+  fig-prefix: 'Figura'
+  tbl-title: 'Tabla'
+  tbl-prefix: 'Tabla'
+  ref-hyperlink: false
+  title-delim: '.'
+mainfont: Roboto Condensed
+include-in-header:
+  text: |
+    \newfontfamily\tfont{Roboto Condensed}
+    \addtokomafont{title}{\tfont}
+    \addtokomafont{author}{\tfont}
+    \addtokomafont{section}{\tfont}
+    \addtokomafont{subsection}{\tfont}
+    \addtokomafont{subsubsection}{\tfont}
+fontsize: 11pt
+editor: visual
+---
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+##### Análisis de la salida de los resultados LH-OAT #####
+library(data.table)
+library(flextable)
+library(ragg)
+
+knitr::opts_chunk$set(dev = "ragg_png")
+
+##### Análisis de Sensibilidad variando parámetros entre 0.95 y 1.05 #####
+ffb1_out <- fread(here('full_sensitivity_analysis/LH_OAT_FFB/LH_OAT-out.txt'))
+ffb1_sum_out <- fread(here('full_sensitivity_analysis/LH_OAT_FFB_sum/LH_OAT-out.txt'))
+la1_out <- fread(here('full_sensitivity_analysis/LH_OAT_LA/LH_OAT-out.txt'))
+mg1_out <- fread(here('full_sensitivity_analysis/LH_OAT_MG/LH_OAT-out.txt'))
+mt1_out <- fread(here('full_sensitivity_analysis/LH_OAT_MT/LH_OAT-out.txt'))
+mv1_out <- fread(here('full_sensitivity_analysis/LH_OAT_MV/LH_OAT-out.txt'))
+nb1_out <- fread(here('full_sensitivity_analysis/LH_OAT_NB/LH_OAT-out.txt'))
+
+ffb1_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_FFB/LH_OAT-Ranking.txt')) %>%
+  mutate(variable = 'FFB')
+ffb1_sum_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_FFB_sum/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'FFB_sum')
+la1_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_LA/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'LeafArea')
+mg1_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_MG/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'MassGenerative')
+mt1_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_MT/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'MassTotal')
+mv1_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_MV/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'MassVegetative')
+nb1_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_NB/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'NumberBunches')
+
+##### Análisis de Sensibilidad variando parámetros entre 0.90 y 1.10 #####
+ffb2_out <- fread(here('full_sensitivity_analysis/LH_OAT_FFB_2/LH_OAT-out.txt'))
+ffb2_sum_out <- fread(here('full_sensitivity_analysis/LH_OAT_FFB_sum_2/LH_OAT-out.txt'))
+la2_out <- fread(here('full_sensitivity_analysis/LH_OAT_LA_2/LH_OAT-out.txt'))
+mg2_out <- fread(here('full_sensitivity_analysis/LH_OAT_MG_2/LH_OAT-out.txt'))
+mt2_out <- fread(here('full_sensitivity_analysis/LH_OAT_MT_2/LH_OAT-out.txt'))
+mv2_out <- fread(here('full_sensitivity_analysis/LH_OAT_MV_2/LH_OAT-out.txt'))
+nb2_out <- fread(here('full_sensitivity_analysis/LH_OAT_NB_2/LH_OAT-out.txt'))
+
+ffb2_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_FFB_2/LH_OAT-Ranking.txt')) %>%
+  mutate(variable = 'FFB')
+ffb2_sum_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_FFB_sum_2/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'FFB_sum')
+la2_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_LA_2/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'LeafArea')
+mg2_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_MG_2/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'MassGenerative')
+mt2_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_MT_2/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'MassTotal')
+mv2_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_MV_2/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'MassVegetative')
+nb2_ranking <- fread(here('full_sensitivity_analysis/LH_OAT_NB_2/LH_OAT-Ranking.txt'))  %>%
+  mutate(variable = 'NumberBunches')
+
+```
+
+## Introducción {#sec-introduction}
+
+El crecimiento de la palma de aceite está influenciado por una amplia variedad de factores ambientales, edáficos y genéticos, lo que hace que la predicción precisa de su rendimiento sea un desafío complejo. Para abordar esta complejidad, se han desarrollado modelos matemáticos que simulan el crecimiento de la planta y su producción de racimos de fruta fresca a lo largo del tiempo como el modelo PALMSIM. Sin embargo, dada la gran cantidad de parámetros que intervienen en estos modelos, resulta crucial identificar cuáles de ellos tienen un mayor impacto en las predicciones del modelo, lo que permite enfocar los esfuerzos en la calibración de los parámetros más relevantes. En este contexto, el análisis de sensibilidad global se ha convertido en una herramienta clave para evaluar la influencia de múltiples parámetros de manera simultánea.
+
+Este reporte presenta los resultados de un análisis de sensibilidad global realizado sobre el modelo de crecimiento de palma de aceite PALMSIM, con el objetivo de identificar los parámetros que afectan principalmente la producción de racimos de fruta fresca. Se empleó el método Latin Hypercube One Factor At a Time (LH-OAT) para realizar el análisis, lo que permitió cuantificar la importancia relativa de 67 parámetros involucrados en el modelo. Los resultados de este trabajo proporcionan una visión clara sobre los factores que deben ser priorizados en la calibración del modelo, contribuyendo a una mejora en la precisión y robustez de las predicciones.
+
+## Análisis de Sensibilidad {#sec-sensitivity-analysis}
+
+Un análisis de sensibilidad es una técnica utilizada para evaluar cómo los cambios en los parámetros de entrada de un modelo afectan sus resultados o salidas. El objetivo es identificar qué parámetros son los más influyentes en el comportamiento del modelo, es decir, aquellos que generan mayores variaciones en las salidas cuando se modifican. Esto permite comprender mejor el funcionamiento del modelo, optimizar su calibración y enfocarse en los parámetros más críticos, lo que puede mejorar tanto la precisión como la robustez de las predicciones del modelo.
+
+Este tipo de análisis es especialmente útil en modelos complejos con múltiples parámetros, donde pequeñas variaciones en algunos de ellos pueden tener un impacto significativo en los resultados, mientras que otros parámetros pueden tener un efecto menor o nulo. A través del análisis de sensibilidad, es posible priorizar esfuerzos en la recolección de datos, la calibración de parámetros y la interpretación de los resultados del modelo.
+
+Estos métodos se dividen comúnmente en análisis de sensibilidad local y análisis de sensibilidad global. El análisis local evalúa el efecto de pequeños cambios en un solo parámetro alrededor de un punto de referencia o valor nominal. Es útil para identificar qué tan sensibles son las salidas del modelo a variaciones marginales, pero no proporciona información completa cuando el modelo tiene un comportamiento no lineal o interacciones entre múltiples parámetros.
+
+Por otro lado, el análisis de sensibilidad global considera las interacciones entre parámetros y evalúa cómo la variabilidad de todos los parámetros influye en las salidas del modelo en su totalidad. Métodos globales como el análisis de Sobol, el análisis FAST (Fourier Amplitude Sensitivity Test) y el muestreo de Latin Hypercube permiten obtener una visión más robusta de cómo las incertidumbres en los parámetros afectan el desempeño del modelo. Estos enfoques son esenciales cuando se trabaja con modelos complejos donde múltiples variables interactúan entre sí, ya que pueden identificar tanto el efecto individual de cada parámetro como sus interacciones, proporcionando una evaluación más exhaustiva.
+
+### Latin Hypercube One Factor At a Time (LH-OAT)
+
+El LH-OAT es una técnica de análisis de sensibilidad que combina las características del muestreo Latin Hypercube (LH) con el enfoque "One Factor At a Time" (OAT) (van Griensven et al., 2006). Su propósito es evaluar cómo la variación de cada parámetro de un modelo afecta sus salidas o resultados, lo que lo hace especialmente útil para estudiar modelos complejos y multivariables. Al integrar el muestreo LH, el método garantiza una cobertura uniforme del espacio de los parámetros, asegurando que las muestras de los parámetros se distribuyan equitativamente a lo largo de su rango de variación.
+
+El enfoque OAT, por su parte, implica modificar un solo parámetro a la vez mientras se mantienen los demás fijos, lo que facilita la evaluación del efecto individual de cada parámetro sobre las salidas del modelo. Esta característica simplifica la interpretación de los resultados y permite identificar cuáles son los parámetros más sensibles, es decir, aquellos que generan los mayores cambios en las variables de salida cuando se alteran. En el contexto del LH-OAT, este procedimiento se aplica sobre un conjunto de muestras generadas con Latin Hypercube, lo que asegura que el análisis cubra diversas combinaciones de parámetros de manera eficiente.
+
+El método LH-OAT es adecuado para estudios de sensibilidad que requieren una evaluación detallada de los efectos individuales de varios parámetros sin necesidad de realizar un número excesivo de simulaciones o cuando el poder de cómputo disponible es limitado. Ofrece una combinación de cobertura del espacio de búsqueda (gracias a Latin Hypercube) y simplicidad en el análisis de impacto (debido al enfoque OAT), permitiendo identificar los parámetros críticos de manera efectiva en modelos de simulación complejos.
+
+## Métodos {#sec-metodos}
+
+### Parámetros Considerados 
+
+Los parámetros considerados en el análisis se presentan en la @tbl-parametros_full. Dado que el número de parámetros del modelo PALMSIM es mucho más grande se hizo una selección de los parámetros que se esperaría tendrían mayor influencia sobre el resultado del modelo. Parámetros relacionados con el componente climático y que han sido ampliamente referenciados y validados en la literatura científica relacionada no se incluyeron para este análisis de sensibilidad.
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#| tbl-cap: "Parámetros considerados en el análisis de sensibilidad"
+#| label: tbl-parametros_full
+
+parametros <- read_csv(here('full_sensitivity_analysis/full_parameters_list.csv')) %>%
+  select(component, parameter, value, unit) %>%
+  rename(Componente = component, Parámetro = parameter, Valor = value, Unidad = unit) %>%
+  mutate(Unidad = if_else(Unidad == 1, '[-]', Unidad)) %>%
+  mutate(Componente = case_when(
+    Componente == 'fronds' ~ 'Follaje',
+    Componente == 'assimilates' ~ 'Asimilados',
+    Componente == 'soil' ~ 'Suelo',
+    Componente == 'roots' ~ 'Raíces',
+    Componente == 'trunk' ~ 'Estípite',
+    Componente == 'indeterminate' ~ 'Indeterminado',
+    Componente == 'male' ~ 'Masculina',
+    Componente == 'female' ~ 'Femenina',
+    Componente == 'stalk' ~ 'Pedúnculo',
+    Componente == 'mesocarp_fibers' ~ 'Fibras mesocarpio',
+    Componente == 'mesocarp_oil' ~ 'Aceite mesocarpio',
+    TRUE ~ Componente))
+
+parametros %>%
+  flextable() %>%
+  set_table_properties(layout = 'autofit') %>%
+  font(fontname = 'Roboto Condensed',
+       part = 'all') %>%
+  fontsize(size = 10, part = 'all') %>%
+  colformat_double(j = 3, digits = 3)
+  
+```
+
+#### Rangos de Variación
+
+Se estalecieron dos rangos de variación para cada parámetro: uno de ±5% y otro de ±10% respecto al valor base. Al aplicar un rango de ±5%, se pueden observar los efectos de pequeñas variaciones en los parámetros. Esto es útil para identificar la sensibilidad del modelo a cambios menores y para evaluar la robustez del modelo en condiciones cercanas a los valores nominales. Por otro lado, el rango de ±10% permite explorar el comportamiento del modelo bajo perturbaciones más significativas, proporcionando una visión más amplia sobre cómo responde a variaciones más extremas.
+
+El establecer estos dos rangos de variación lo que busca es proporcionar una comprensión más profunda y detallada de la sensibilidad del modelo a los cambios en los parámetros, permitiendo identificar cuáles son los más críticos ante diferentes niveles de perturbación.
+
+### Variables de Salida
+
+Para realizar el análisis de sensibilidad global en el modelo PALMSIM, se incluyó una función específica para correr simulaciones del modelo de manera que la salida fuera una única variable representada en un escalar tal como lo pide el análisis LH-OAT. En consecuencia se realizaron simulaciones considerando las siguientes variables de salida:
+
+-   Producción de racimos de fruta fresca del último día de la simulación (FFB, kg/ha/año)
+-   Producción de racimos de fruta fresca acumulada para todo el periodo de simulación (FFB acumulado, kg/ha)
+-   Área foliar por palma (AF, m2/palma)
+-   Masa generativa del último día de la simulación (MG, kg/ha/día)
+-   Masa vegetativa del último día de la simulación (MV, kg/ha/día)
+-   Masa total del último día de la simulación (MT, kg/ha/día)
+-   Número de racimos total del último día de la simulación (NB, -/ha/día)
+
+Correr varias veces el análisis LH-OAT con diferentes conjuntos de simulaciones y variables de salida antes de unir los rankings de sensibilidad en una sola tabla tiene varias ventajas importantes:
+
+* Cada variable de salida puede ser influenciada de manera distinta por los parámetros del modelo. Al realizar el análisis LH-OAT con diferentes variables de salida, se pueden obtener rankings de sensibilidad que reflejan cómo cada parámetro afecta a cada aspecto del comportamiento del modelo. Esto permite una comprensión más completa de la dinámica del sistema, ya que ciertos parámetros pueden ser críticos para algunas salidas, pero menos relevantes para otras.
+
+* Al correr el análisis múltiples veces con diferentes variables, se puede comparar la consistencia de los rankings de sensibilidad. Si un parámetro aparece como importante en varios análisis, esto proporciona una mayor confianza en que su efecto es significativo y no es un hallazgo aislado. La validación cruzada de los rankings ayuda a identificar parámetros robustos y esenciales, lo que es crucial para la interpretación y toma de decisiones basadas en el modelo.
+
+* Al combinar los diferentes rankings de sensibilidad en una sola tabla, se genera una visión integral que permite evaluar la importancia relativa de los parámetros a lo largo de diversas condiciones y salidas. Esto facilita la identificación de patrones y tendencias en los efectos de los parámetros, ayudando a priorizar aquellos que requieren atención en términos de calibración.
+
+### Simulaciones PALMSIM
+
+Las condiciones generales bajo las cuales se realizaron las simulaciones empleando el modelo PALMSIM fueron las siguientes:
+
+* Ubicación geográfica: latitud 3.89580, longitud -73.34700 (Zona Oriental)
+* Fecha de inicio de la simulación: 01/01/2009
+* Duración de la simulación: 10 años
+* Frecuencia de muestreo: diaria
+* Densidad de siembra: 143 palmas/ha
+* Profunidad del suelo: 1.0 m
+* Textura del suelo: Arcillo-limoso
+
+El análisis de sensibilidad LH-OAT se ejecutó definiendo los parámetros a evaluar dentro de los rangos previamente establecidos. El número de simulaciones se fijó a partir del número de estratos, es decir la cantidad de particiones que se generaron dentro del rango de cada parámetro, que en este caso se estableció en 100, con un nivel de perturbación `f` de 0.005. Considerando que el número de parámetros fue 67, el total de simulaciones para cada variable de respuesta fue de 6800 (N x (P + 1) = 100 particiones x (67 parámetros + 1)). Además, se habilitó la paralelización con 8 nodos de procesamiento para optimizar el tiempo de ejecución en el servidor de Inteligencia Artificial a cargo del área de Geomática.
+
+## Resultados {#resultados}
+
+### Variables de Respuesta
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+
+dist_data <- data.frame(
+  Rango = c(rep("±5%", 7 * 6800), rep("±10%", 7 * 6800)),
+  Variable = c(rep(c("FFB", "FFB acumulado", "LA", "MG", "MT", "MV", "NB"), each = 6800), 
+               rep(c("FFB", "FFB acumulado", "LA", "MG", "MT", "MV", "NB"), each = 6800)),
+  Valor = unlist(c(ffb1_out, ffb1_sum_out, la1_out, mg1_out, mt1_out, mv1_out, nb1_out,
+            ffb2_out, ffb2_sum_out, la2_out, mg2_out, mt2_out, mv2_out, nb2_out))
+)
+
+summary_data <- dist_data %>%
+  group_by(Variable, Rango) %>%
+  summarise(Min = min(Valor), Q1 = quantile(Valor, 0.25), Mediana = median(Valor), 
+            Promedio = mean(Valor), Q3 = quantile(Valor, 0.75), Max = max(Valor),
+            DesvEst = sd(Valor))
+
+```
+
+
+Los resultados de las simulaciones (@tbl-resumen) muestran una notable variabilidad en la respuesta de las variables bajo los rangos de variación de ±5% y ±10%, lo que refleja la sensibilidad del modelo a los cambios en los parámetros. Por ejemplo, en la variable FFB, se observa que el rango de variación ±10% genera una mayor dispersión en los resultados en comparación con el ±5%. El valor máximo de FFB es claramente más alto en el rango de ±10% (`{r} format(round(summary_data$Max[summary_data$Variable == 'FFB' & summary_data$Rango == '±10%'], 2), scientific = FALSE)` kg/ha/año) que en el rango de ±5% (`{r} format(round(summary_data$Max[summary_data$Variable == 'FFB' & summary_data$Rango == '±5%'], 2), scientific = FALSE)` kg/ha/año), y lo mismo ocurre con la desviación estándar, que es mayor en ±10% (`{r} round(summary_data$DesvEst[summary_data$Variable == 'FFB' & summary_data$Rango == '±10%'], 2)` kg/ha/año vs. `{r} round(summary_data$DesvEst[summary_data$Variable == 'FFB' & summary_data$Rango == '±5%'], 2)` kg/ha/año). Esta diferencia indica que el aumento en el rango de variación amplifica la respuesta del modelo para esta variable.
+
+En el caso de otras variables, como MG y MT, la tendencia se mantiene. En MG, el rango de ±10% presenta una desviación estándar de `{r} round(summary_data$DesvEst[summary_data$Variable == 'MG' & summary_data$Rango == '±10%'], 2)` kg/ha/día, que es aproximadamente el doble de la obtenida en ±5% (`{r} round(summary_data$DesvEst[summary_data$Variable == 'MG' & summary_data$Rango == '±5%'], 2)` kg/ha/día), lo que sugiere que este rango mayor provoca una mayor dispersión en los valores simulados. De manera similar, para MT, la desviación estándar se duplica al pasar de ±5% (`{r} round(summary_data$DesvEst[summary_data$Variable == 'MT' & summary_data$Rango == '±5%'], 2)` kg/ha/día) a ±10% (`{r} round(summary_data$DesvEst[summary_data$Variable == 'MT' & summary_data$Rango == '±10%'], 2)` kg/ha/día), lo cual muestra una sensibilidad significativa de esta variable ante incrementos en el rango de variación. Sin embargo, el comportamiento de la media y la mediana sigue siendo muy consistente entre ambos rangos, lo que sugiere que los cambios se reflejan principalmente en los valores extremos.
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#| tbl-cap: "Estadísticas resumen de las variables de salida"
+#| label: tbl-resumen
+
+summary_data %>%
+  flextable() %>%
+  set_table_properties(layout = 'autofit') %>%
+  font(fontname = 'Roboto Condensed',
+       part = 'all') %>%
+  fontsize(size = 10, part = 'all') %>%
+  colformat_double(digits = 1)
+
+```
+
+Por otro lado, la variable LA no presenta ninguna variabilidad en los resultados, independientemente del rango de variación, manteniendo los mismos valores en ambos casos. Esto indica que esta variable no es sensible a las variaciones de los parámetros en los rangos estudiados, lo que puede señalar una estabilidad estructural o falta de sensibilidad del modelo para esta variable en particular.
+
+Los gráficos de densidad obtenidos para las seis variables de salida con rangos de variación de ±5% y ±10% revelan diferencias notables en la sensibilidad del modelo PALMSIM a los cambios en los parámetros evaluados (@fig-distribucion). 
+
+En el caso de FFB y FFB acumulado, los patrones de distribución para ambos rangos de variación muestran una superposición considerable, aunque el rango de ±10% exhibe una mayor dispersión, con colas más largas y amplias en ambos extremos del espectro. Esto indica que, mientras que pequeñas variaciones (±5%) en los parámetros generan cambios moderados en el rendimiento de racimos, aumentos más grandes en la variación (±10%) amplifican significativamente las diferencias en los valores simulados. Sin embargo, los picos en ambas distribuciones permanecen cercanos, sugiriendo que el modelo tiende a estabilizarse alrededor de ciertos valores, incluso bajo variaciones más amplias.
+
+La diferencia entre los dos rangos para MG es más marcada. En el rango de ±5%, las distribuciones están concentradas en un rango estrecho, lo que sugiere una baja sensibilidad a pequeñas perturbaciones en los parámetros. Sin embargo, el rango de ±10% introduce una mayor dispersión, mostrando que variaciones más grandes en los parámetros influyen significativamente en esta variable. Este comportamiento sugiere que MG es menos sensible a fluctuaciones pequeñas, pero se vuelve más reactiva a perturbaciones amplias, posiblemente debido a interacciones no lineales entre los parámetros.
+
+MT presenta una distribución similar a la observada en FFB y FFB acumulado, donde las diferencias entre los rangos de ±5% y ±10% son visibles principalmente en la dispersión de los valores. Nuevamente, el rango de ±10% resulta en una mayor variabilidad en los resultados, pero los picos en ambas distribuciones permanecen cercanos, lo que sugiere que MT responde de manera moderada a variaciones de mayor magnitud, con una ligera inclinación hacia valores extremos bajo mayor variación de los parámetros.
+
+En el caso de MV, los gráficos muestran una superposición más notable entre los dos rangos de variación, lo que indica una menor sensibilidad a las diferencias entre los niveles de perturbación de los parámetros. Las distribuciones son más consistentes, lo que sugiere que, independientemente de si los parámetros varían en ±5% o ±10%, los valores de MV tienden a mantenerse dentro de un rango más controlado. Este comportamiento sugiere que la generación de materia vegetativa es más estable frente a los cambios de los parámetros, posiblemente porque está más directamente vinculada a factores de crecimiento intrínsecos que son menos sensibles a variaciones externas.
+
+```{r message=FALSE, echo=FALSE, warning=FALSE, fig.height=6, fig.width=10}
+#| fig-cap: "Distribución de los valores de las variables de salida seleccionadas en las simulaciones del modelo PALMSIM"
+#| label: fig-distribucion
+#| 
+
+ggplot(dist_data %>%
+         filter(Variable != 'LA'), aes(x = Valor, fill = Rango)) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~Variable, scales = "free") +
+  theme_minimal() +
+  labs(x = "Valor", y = "Densidad", fill = "Rango de variación") +
+  theme(legend.position = "bottom")
+
+```
+
+Finalmente, en NB se observa una dispersión significativa tanto en ±5% como en ±10%, con una mayor amplitud de la cola de la distribución en el rango de ±10%. Aunque el pico de la distribución sigue siendo similar en ambos casos, el rango de ±10% genera valores más extremos, lo que indica que NB es particularmente sensible a variaciones grandes en los parámetros, aunque se mantiene relativamente estable frente a fluctuaciones menores.
+
+En general, las seis variables muestran un patrón consistente: el rango de ±10% genera distribuciones más dispersas y amplias, lo que refleja una mayor sensibilidad del modelo a variaciones grandes en los parámetros, mientras que el rango de ±5% tiende a mantener las distribuciones más compactas y cercanas a sus valores centrales. Esto resalta la importancia de la magnitud de la variación en la evaluación de la sensibilidad del modelo y sugiere que ciertas variables, como NB y MG, son más susceptibles a fluctuaciones grandes en los parámetros, mientras que otras, como MV, son más estables.
+
+
+### Ranking de Sensibilidad
+
+Los resultados de los ranking de sensibilidad para los dos escenarios de variación de parámetros presentados en esta sección solamente incluyen los primeros 15 parámetros según la variable FFB, con el fin de describir los resultados para los parámetros más sensibles del modelo. En la comparación de los rankings de sensibilidad de los parámetros del modelo PALMSIM entre los dos rangos de variación de parámetros (±5%: @tbl-ranking1; ±10%: @tbl-ranking2), se observa una consistencia en la posición de ciertos parámetros, como los relacionados con el mantenimiento específico de raíces (`roots_specific_maintenance`), la eficiencia de conversión del tronco (`trunk_conversion_efficiency`), y el parámetro de pérdida de raíces (`roots_loss_param`). Estos parámetros se mantienen consistentemente en los primeros lugares de sensibilidad tanto en la variable FFB como en la suma de FFB, lo que indica su importancia central en la determinación del rendimiento de racimos de fruta fresca y sus componentes bajo ambas condiciones de variación de parámetros del ±5% y ±10%.
+
+Al analizar las diferencias en los rankings de los parámetros cuando se incrementa la variación de los parámetros al ±10%, un cambio notable ocurre en la clasificación de variables como el área foliar, donde todos los parámetros importantes para el FFB se ubican en la posición 67, indicando que no hay sensibilidad para esta variable, independientemente de la magnitud de la variación. Este resultado implica que, aunque estos parámetros son críticos para las demás variables de salida, tienen poco impacto sobre la dinámica del área foliar, sugiriendo una estabilidad o independencia total de esta variable en relación con todos los parámetros del modelo.
+
+Los parámetros relacionados con la eficiencia de mantenimiento y conversión del aceite del mesocarpio, como `mesocarp_oil_specific_maintenance`, también muestran cambios en los rankings. En la variación del ±5% (@tbl-ranking1), este parámetro ocupa posiciones relativamente estables en torno a los lugares 9 y 7 para masa total y masa vegetativa, respectivamente, mientras que en la tabla de variación del ±10% (@tbl-ranking2), su influencia en estas mismas variables disminuye ligeramente. Este cambio sugiere que la variación más amplia disminuye la sensibilidad del modelo respecto a la dinámica del aceite del mesocarpio, especialmente en lo referente a la masa total y vegetativa.
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#| tbl-cap: "Ranking de sensibilidad de los parámetros del modelo PALMSIM basado en las variables de salida seleccionadas, con una variación -/+ 5% respecto al valor original de cada parámetro"
+#| label: tbl-ranking1
+#| 
+##### Unión de los rankings
+ranking1 <- rbind(ffb1_ranking, 
+                 ffb1_sum_ranking, 
+                 la1_ranking,
+                 mg1_ranking, 
+                 mt1_ranking, 
+                 mv1_ranking,
+                 nb1_ranking)
+
+##### Tabla con los rankings de cada variable
+ranking1 %>%
+  select(variable, ParameterName, RankingNmbr) %>%
+  spread(variable, RankingNmbr) %>%
+  arrange(FFB) %>%
+  head(15) %>%
+  rename('Parámetro' = 'ParameterName',
+         'FFB' = 'FFB',
+         'Suma FFB' = 'FFB_sum',
+         'Área foliar' = 'LeafArea',
+         'Masa generativa' = 'MassGenerative',
+         'Masa total' = 'MassTotal',
+         'Masa vegetativa' = 'MassVegetative',
+         'Nro racimos' = 'NumberBunches') %>%
+  flextable() %>%
+  set_table_properties(layout = 'autofit') %>%
+  footnote(i = 1, j = 1,
+           ref_symbols = '*',
+           value = as_paragraph('Se presentan los primeros 15 parámetros en función del ranking FFB')) %>%
+  fontsize(size = 10, part = 'all') %>%
+  font(fontname = 'Roboto Condensed',
+       part = 'all')
+
+```
+
+El parámetro `trunk_specific_maintenance` se mantiene de manera constante en la quinta posición tanto para el FFB como para la suma de FFB para los dos escenarios de variación de parámetros. Esto demuestra que este parámetro tiene un impacto importante y estable en las principales salidas del modelo relacionadas con la producción de fruta fresca, lo que resalta su relevancia en la eficiencia global del tronco bajo variaciones de hasta un ±10%.
+
+Los parámetros asociados con la lignificación y la densidad del tronco (`trunk_lignification_rate`, `trunk_density_a`, y `trunk_density_b`) muestran una sensibilidad más baja en variables como la masa total y vegetativa en ambos escenarios, con un descenso más notable para el escenario de variación del ±10%. Este comportamiento sugiere que, si bien son importantes para la masa generativa y la producción de racimos, su influencia sobre la estructura general de la planta disminuye a medida que aumenta la variabilidad en el modelo, lo que podría implicar una menor interacción entre la densidad del tronco y la masa vegetativa bajo condiciones más extremas.
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+#| tbl-cap: "Ranking de sensibilidad de los parámetros del modelo PALMSIM basado en las variables de salida seleccionadas, con una variación -/+ 10% respecto al valor original de cada parámetro"
+#| label: tbl-ranking2
+
+##### Unión de los rankings
+ranking2 <- rbind(ffb2_ranking, 
+                 ffb2_sum_ranking, 
+                 la2_ranking,
+                 mg2_ranking, 
+                 mt2_ranking, 
+                 mv2_ranking,
+                 nb2_ranking)
+
+##### Tabla con los rankings de cada variable
+ranking2 %>%
+  select(variable, ParameterName, RankingNmbr) %>%
+  spread(variable, RankingNmbr) %>%
+  arrange(FFB) %>%
+  head(15) %>%
+  rename('Parámetro' = 'ParameterName',
+         'FFB' = 'FFB',
+         'Suma FFB' = 'FFB_sum',
+         'Área foliar' = 'LeafArea',
+         'Masa generativa' = 'MassGenerative',
+         'Masa total' = 'MassTotal',
+         'Masa vegetativa' = 'MassVegetative',
+         'Nro racimos' = 'NumberBunches') %>%
+  flextable() %>%
+  set_table_properties(layout = 'autofit') %>%
+  footnote(i = 1, j = 1,
+           ref_symbols = '*',
+           value = as_paragraph('Se presentan los primeros 15 parámetros en función del ranking FFB')) %>%
+  font(fontname = 'Roboto Condensed',
+       part = 'all') %>%
+  fontsize(size = 10, part = 'all')
+
+```
+
+Los parámetros relacionados con la fibra del mesocarpio, como `mesocarp_fibers_t_growth_start` y `mesocarp_fibers_t_growth_end`, muestra diferencias importantes entre ambos escenarios. En el escenario de variación del ±5%, estos parámetros ocupan posiciones cercanas a las 13 y 16, mientras que en el escenario de variación del ±10% su influencia es más dispersa, ocupando posiciones más alejadas en algunas variables. Este comportamiento podría indicar una mayor sensibilidad a la variabilidad en ciertos aspectos de crecimiento del mesocarpio, pero su impacto general sigue siendo menor comparado con los parámetros relacionados al tronco y las raíces.
+
+## Conclusiones {#conclusiones}
+
+Los resultados del análisis de sensibilidad indicaron que la variabilidad en las respuestas del modelo es mayor cuando se emplea un rango de variación de ±10% en comparación con ±5%, lo que indica una sensibilidad amplificada ante mayores cambios en los parámetros. Sin embargo, esta sensibilidad no es homogénea en todas las variables, ya que mientras variables como FFB, MG y MT muestran una clara dispersión creciente con el aumento del rango de variación, otras como LA permanecen insensibles a los cambios.
+
+Los parámetros relacionados con las raíces y el estípite, como `roots_specific_maintenance`, `trunk_conversion_efficiency` y `roots_loss_param`, son consistentemente los más sensibles en la determinación del rendimiento de racimos de fruta fresca (FFB) y su suma total, independientemente de la magnitud de la variación en los parámetros (±5% o ±10%). Esto sugiere que estos factores son determinantes clave en el modelo PALMSIM, ya que afectan de manera significativa no solo la producción generativa, sino también la masa total y vegetativa, lo que los convierte en parámetros importantes a optimizar en el proceso de calibración del modelo.
+
+Por otro lado, los parámetros relacionados con el área foliar presentaron una baja sensibilidad frente a las variaciones en los parámetros del modelo, lo que indica que dentro de los principales factores que determinan la producción de racimos no se encuentra el crecimiento foliar. Además, la variabilidad en los parámetros relacionados con la lignificación y densidad del tronco, así como con la eficiencia de conversión del aceite del mesocarpio, se vuelven más relevantes a medida que aumenta la variación de los parámetros, especialmente en la masa total y vegetativa. Esto resalta que bajo condiciones de mayor estrés o variabilidad, algunos parámetros que inicialmente parecen menos sensibles pueden adquirir un papel más relevante, afectando la robustez general del modelo.
+
+## Referencias
+
+van Griensven, A., Meixner, T., Grunwald, S., Bishop, T., Diluzio, M., Srinivasan, R. 2016. A global sensitivity analysis tool for the parameters of multi-variable catchment models. Journal of Hydrology, 324(1-4), 10-23.
